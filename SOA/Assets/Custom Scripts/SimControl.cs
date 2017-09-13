@@ -711,6 +711,9 @@ public class SimControl : MonoBehaviour
                     }
                 }
             }
+
+            soaEventLogger.LogIsrMetrics(blueDataManager);
+
         }
 	}
     

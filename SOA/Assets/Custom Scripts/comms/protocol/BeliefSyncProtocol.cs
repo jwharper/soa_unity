@@ -39,6 +39,17 @@ namespace soa
 			}
 		}
 
+        public bool isAutonomyConnected(int actorID)
+        {
+            AgentMessageHandler handler = findHandler(actorID);
+            if (handler != null)
+            {
+                IPEndPoint address = handler.getConnection().getRemoteAddress();
+                return address != null;
+            }
+            return false;
+        }
+
 		public string getConnectionString(int actorID)
 		{
 			AgentMessageHandler handler = findHandler(actorID);

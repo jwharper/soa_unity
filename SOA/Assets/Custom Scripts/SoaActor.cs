@@ -104,7 +104,7 @@ public class SoaActor : MonoBehaviour, ISoaActor
     private Communicator<int> communicator;
 
     NavMeshAgent nma;
-
+    
 	public int getID()
 	{
 		return unique_id;

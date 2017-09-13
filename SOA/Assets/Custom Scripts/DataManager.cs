@@ -64,6 +64,11 @@ namespace soa
 			cm.synchronizeBelief(b, sourceID);
 		}
 
+        public bool isAutonomyConnected(int agentID)
+        {
+            return cm.isAutonomyConnected(agentID);
+        }
+
         public string getConnectionInfoForAgent(int agentID)
         {
             return cm.getConnectionForAgent(agentID);

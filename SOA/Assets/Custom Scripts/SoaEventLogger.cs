@@ -18,6 +18,8 @@ namespace soa
         private XmlNode errorsNode;
         private XmlNode resultNode;
         private XmlNode eventsNode;
+        private XmlNode isrNode;
+        private Dictionary<int, XmlNode> isrActorNodes;
 
         // Options
         private string outputFile;
@@ -81,6 +83,10 @@ namespace soa
                 // Create "Results" node
                 resultNode = xmlDoc.CreateElement("Results");
                 logNode.AppendChild(resultNode);
+
+                isrNode = xmlDoc.CreateElement("ISR");
+                logNode.AppendChild(isrNode);
+                isrActorNodes = new Dictionary<int, XmlNode>();
 
                 // Create "Events" node
                 if (logEventsToFile)
@@ -376,6 +382,77 @@ namespace soa
 
             // Also output to unity debug console
             Log.error(message);
+        }
+
+        public void LogIsrMetrics(DataManager blueDataManager)
+        {
+            string now_ms = CreateTimestamp(DateTime.Now);
+            foreach (SoaActor actor in blueDataManager.actors)
+            {
+                if (actor.isAlive)
+                {
+                    XmlNode actorNode = getIsrActorNodeFor(actor.unique_id, actor.type, (int)actor.affiliation);
+                    ((XmlAttribute)actorNode.Attributes.GetNamedItem("autonomy")).Value = blueDataManager.isAutonomyConnected(actor.unique_id).ToString().ToLower();
+                    AddIsrRecord(actorNode, actor, now_ms);
+                }
+            }
+        }
+
+        private XmlNode getIsrActorNodeFor(int actorID,int type, int affiliation)
+        {
+            XmlNode node = null;
+            if (!isrActorNodes.TryGetValue(actorID, out node))
+            {
+                node = xmlDoc.CreateElement("Actor");
+                
+                AddAttribute(node, "id", actorID.ToString());
+                AddAttribute(node, "type", GetActorTypeString(type));
+                AddAttribute(node, "affiliation", GetActorAffiliationString(affiliation));
+                AddAttribute(node, "autonomy", "false");
+
+                isrNode.AppendChild(node);
+
+                isrActorNodes.Add(actorID, node);
+            }
+            return node;
+        }
+
+        private void AddIsrRecord(XmlNode actorNode, SoaActor actor, string currentTime)
+        {
+            IEnumerable<Belief_Actor> actorBeliefs = actor.getRepository().FindAll<Belief_Actor>(Belief.BeliefType.ACTOR);
+            XmlNode record = xmlDoc.CreateElement("Snapshot");
+            AddAttribute(record, "time", currentTime);
+            actorNode.AppendChild(record);
+
+            foreach(Belief_Actor belief in actorBeliefs)
+            {
+                if (belief.getId() != actor.unique_id)
+                {
+                    XmlNode targetRecord = xmlDoc.CreateElement("Target");
+                    record.AppendChild(targetRecord);
+
+                    AddAttribute(targetRecord, "id", belief.getId().ToString());
+                    AddAttribute(targetRecord, "type", GetActorTypeString(belief.getType()));
+                    AddAttribute(targetRecord, "affiliation", GetActorAffiliationString(belief.getAffiliation()));
+                    AddAttribute(targetRecord, "time", belief.getBeliefTime().ToString());
+                }
+            }
+        }
+
+        private string GetActorAffiliationString(int affiliation)
+        {
+            if (affiliation >= 0 && affiliation <= (int)Affiliation.UNCLASSIFIED)
+                return ((Affiliation)affiliation).ToString();
+            return "Unknown(" + affiliation.ToString() + ")";
+        }
+
+        private string GetActorTypeString(int type)
+        {
+            if (type == 0)
+                return "Base";
+            else if (type >= 1 && type <= 6)
+                return ((SoaActor.ActorType)type).ToString();
+            return "Unknown(" + type.ToString() + ")";
         }
     }
 }

@@ -57,6 +57,11 @@ namespace soa
 			protocol.synchronizeBelief(b, sourceID);
 		}
 
+        public bool isAutonomyConnected(int agentID)
+        {
+            return protocol.isAutonomyConnected(agentID);
+        }
+
         public string getConnectionForAgent(int agentID)
         {
 			return protocol.getConnectionString(agentID);
